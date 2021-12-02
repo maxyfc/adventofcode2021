@@ -2,22 +2,25 @@ package main
 
 import (
 	"adventofcode2021/pkg/strutil"
+	_ "embed"
 	"fmt"
 )
 
+//go:embed input.txt
+var measurements string
+
 func main() {
-	input := strutil.MustReadFile("input.txt")
-	fmt.Printf("Part 1: %d\n", part1(input))
-	fmt.Printf("Part 2: %d\n", part2(input))
+	fmt.Printf("Part 1: %d\n", part1(measurements))
+	fmt.Printf("Part 2: %d\n", part2(measurements))
 }
 
 func part1(input string) int {
-	values := strutil.ConvertToInts(strutil.SplitLines(input))
+	values := strutil.MustAtoiSlice(strutil.SplitLines(input))
 	return countIncrease(values)
 }
 
 func part2(input string) int {
-	values := strutil.ConvertToInts(strutil.SplitLines(input))
+	values := strutil.MustAtoiSlice(strutil.SplitLines(input))
 
 	sums := make([]int, 0, len(values)-2)
 	for i := 2; i < len(values); i++ {
@@ -28,14 +31,14 @@ func part2(input string) int {
 }
 
 func countIncrease(values []int) int {
-	increased := 0
-	previous := values[0]
+	inc := 0
+	prev := values[0]
 	for i := 1; i < len(values); i++ {
-		current := values[i]
-		if previous < current {
-			increased++
+		curr := values[i]
+		if prev < curr {
+			inc++
 		}
-		previous = current
+		prev = curr
 	}
-	return increased
+	return inc
 }
