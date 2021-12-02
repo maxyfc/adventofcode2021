@@ -1,8 +1,12 @@
 package main
 
-import "testing"
+import (
+	util "adventofcode2021/pkg/testutil"
+	"testing"
+)
 
-var input string = `199
+func TestParts(t *testing.T) {
+	testData := `199
 200
 208
 210
@@ -13,22 +17,8 @@ var input string = `199
 260
 263`
 
-func TestParts(t *testing.T) {
-	tests := []struct {
-		desc     string
-		partFunc func(string) int
-		expected int
-	}{
-		{"Part 1", part1, 7},
-		{"Part 2", part2, 5},
-	}
-
-	for _, test := range tests {
-		t.Run(test.desc, func(t *testing.T) {
-			output := test.partFunc(input)
-			if output != test.expected {
-				t.Errorf("Expected output: %d Got: %d", test.expected, output)
-			}
-		})
-	}
+	util.RunTests(t, testData, []util.TestCase{
+		{Desc: "Part 1", PartFunc: part1, Expected: 7},
+		{Desc: "Part 2", PartFunc: part2, Expected: 5},
+	})
 }
