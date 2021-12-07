@@ -1,6 +1,7 @@
 package main
 
 import (
+	"adventofcode2021/pkg/intutil"
 	"adventofcode2021/pkg/strutil"
 	_ "embed"
 	"fmt"
@@ -29,23 +30,23 @@ func findDangerousPoints(input string, includeDiagonal bool) int {
 	grid := make(map[Point]int)
 	for _, l := range lines {
 		if l.IsHorizontal() {
-			min := min(l.P1.X, l.P2.X)
-			max := max(l.P1.X, l.P2.X)
+			min := intutil.Min(l.P1.X, l.P2.X)
+			max := intutil.Max(l.P1.X, l.P2.X)
 			for i := min; i <= max; i++ {
 				p := Point{i, l.P1.Y}
 				grid[p] += 1
 			}
 		} else if l.IsVertical() {
-			min := min(l.P1.Y, l.P2.Y)
-			max := max(l.P1.Y, l.P2.Y)
+			min := intutil.Min(l.P1.Y, l.P2.Y)
+			max := intutil.Max(l.P1.Y, l.P2.Y)
 			for i := min; i <= max; i++ {
 				p := Point{l.P1.X, i}
 				grid[p] += 1
 			}
 		} else if includeDiagonal && l.IsDiagonal() {
-			xSign := sign(l.P2.X - l.P1.X)
-			ySign := sign(l.P2.Y - l.P1.Y)
-			steps := abs(l.P1.X - l.P2.X)
+			xSign := intutil.Sign(l.P2.X - l.P1.X)
+			ySign := intutil.Sign(l.P2.Y - l.P1.Y)
+			steps := intutil.Abs(l.P1.X - l.P2.X)
 			for i := 0; i <= steps; i++ {
 				p := Point{l.P1.X + xSign*i, l.P1.Y + ySign*i}
 				grid[p] += 1
@@ -63,34 +64,6 @@ func findDangerousPoints(input string, includeDiagonal bool) int {
 	return count
 }
 
-func min(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
-}
-
-func max(x, y int) int {
-	if x < y {
-		return y
-	}
-	return x
-}
-
-func abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-func sign(x int) int {
-	if x < 0 {
-		return -1
-	}
-	return 1
-}
-
 type Line struct {
 	P1, P2 Point
 }
@@ -104,7 +77,7 @@ func (l *Line) IsVertical() bool {
 }
 
 func (l *Line) IsDiagonal() bool {
-	return abs(l.P1.X-l.P2.X) == abs(l.P1.Y-l.P2.Y)
+	return intutil.Abs(l.P1.X-l.P2.X) == intutil.Abs(l.P1.Y-l.P2.Y)
 }
 
 type Point struct {
