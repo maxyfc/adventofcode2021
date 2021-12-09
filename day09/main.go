@@ -104,29 +104,29 @@ func getBasinSize(start Point, heightMap [][]int) int {
 		}
 		history[p] = struct{}{}
 
-		size++
-
-		if p.val >= 8 {
+		if p.val >= 9 {
 			continue
 		}
 
+		size++
+
 		// up
-		if p.y > 0 && heightMap[p.y-1][p.x] == p.val+1 {
+		if p.y > 0 && heightMap[p.y-1][p.x] > p.val {
 			explorePoints = append(explorePoints, Point{p.x, p.y - 1, heightMap[p.y-1][p.x]})
 		}
 
 		// down
-		if p.y < maxY && heightMap[p.y+1][p.x] == p.val+1 {
+		if p.y < maxY && heightMap[p.y+1][p.x] > p.val {
 			explorePoints = append(explorePoints, Point{p.x, p.y + 1, heightMap[p.y+1][p.x]})
 		}
 
 		// left
-		if p.x > 0 && heightMap[p.y][p.x-1] == p.val+1 {
+		if p.x > 0 && heightMap[p.y][p.x-1] > p.val {
 			explorePoints = append(explorePoints, Point{p.x - 1, p.y, heightMap[p.y][p.x-1]})
 		}
 
 		// right
-		if p.x < maxX && heightMap[p.y][p.x+1] == p.val+1 {
+		if p.x < maxX && heightMap[p.y][p.x+1] > p.val {
 			explorePoints = append(explorePoints, Point{p.x + 1, p.y, heightMap[p.y][p.x+1]})
 		}
 	}
