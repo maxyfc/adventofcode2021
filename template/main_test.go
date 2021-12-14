@@ -1,15 +1,27 @@
 package main
 
 import (
-	util "adventofcode2021/pkg/testutil"
+	"fmt"
 	"testing"
 )
 
 func TestParts(t *testing.T) {
 	testData := ``
 
-	util.RunTests(t, testData, []util.TestCase{
-		{Desc: "Part 1", PartFunc: part1, Expected: 0},
-		{Desc: "Part 2", PartFunc: part2, Expected: 0},
-	})
+	tests := []struct {
+		partFunc func(string) int
+		expected int
+	}{
+		{part1, 0},
+		{part2, 0},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i+1), func(t *testing.T) {
+			output := test.partFunc(testData)
+			if output != test.expected {
+				t.Errorf("Expected output: %d Got: %d", test.expected, output)
+			}
+		})
+	}
 }
