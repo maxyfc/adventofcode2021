@@ -23,7 +23,7 @@ func TestParts(t *testing.T) {
 		expected int
 	}{
 		{part1, 40},
-		{part2, 0},
+		{part2, 315},
 	}
 
 	for i, test := range tests {
@@ -41,7 +41,7 @@ func TestParseGrid(t *testing.T) {
 456
 789`
 
-	output := parseGrid(testData)
+	output := parseGrid(testData, 1)
 	expected := [][]int{
 		{1, 2, 3},
 		{4, 5, 6},
@@ -102,8 +102,8 @@ func TestFindPath(t *testing.T) {
 
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			grid := parseGrid(test.grid)
-			result := grid.findPath()
+			grid := parseGrid(test.grid, 1)
+			result := grid.FindPath()
 			if result != test.expected {
 				t.Errorf("Expected: %d Got: %d", test.expected, result)
 			}
