@@ -1,6 +1,7 @@
 package main
 
 import (
+	"adventofcode2021/pkg/strutil"
 	_ "embed"
 	"fmt"
 	"math"
@@ -15,11 +16,29 @@ func main() {
 }
 
 func part1(input string) int {
-	return 0
+	s := sum(strutil.SplitLines(input))
+	return s.Magnitude()
 }
 
 func part2(input string) int {
-	return 0
+	lines := strutil.SplitLines(input)
+
+	max := math.MinInt
+	for i := 0; i < len(lines); i++ {
+		for j := 0; j < len(lines); j++ {
+			if i == j {
+				continue
+			}
+
+			input := []string{lines[i], lines[j]}
+			s := sum(input).Magnitude()
+			if max < s {
+				max = s
+			}
+		}
+	}
+
+	return max
 }
 
 func parse(input string) *Pair {
@@ -68,11 +87,49 @@ func parse(input string) *Pair {
 	return root
 }
 
+func sum(input []string) *Pair {
+	var sum *Pair
+	for _, line := range input {
+		p := parse(line)
+		if sum == nil {
+			sum = p
+		} else {
+			sum = add(sum, p)
+		}
+
+		for {
+			hasExploded := false
+			for sum.Explode() {
+				hasExploded = true
+			}
+
+			hasSplit := sum.Split()
+
+			if !hasExploded && !hasSplit {
+				break
+			}
+		}
+	}
+	return sum
+}
+
+func add(left, right *Pair) *Pair {
+	p := &Pair{
+		nil,
+		left,
+		right,
+	}
+	left.Parent = p
+	right.Parent = p
+	return p
+}
+
 type ValueOrPair interface {
 	IsValue() bool
 	Value() int
 	Left() ValueOrPair
 	Right() ValueOrPair
+	Magnitude() int
 	String() string
 }
 
@@ -86,6 +143,9 @@ func (p *Pair) IsValue() bool      { return false }
 func (p *Pair) Value() int         { return 0 }
 func (p *Pair) Left() ValueOrPair  { return p.LeftSide }
 func (p *Pair) Right() ValueOrPair { return p.RightSide }
+func (p *Pair) Magnitude() int {
+	return p.LeftSide.Magnitude()*3 + p.RightSide.Magnitude()*2
+}
 func (p *Pair) String() string {
 	return fmt.Sprintf("[%s,%s]", p.LeftSide.String(), p.RightSide.String())
 }
@@ -104,14 +164,13 @@ func (p *Pair) CanExplode() bool {
 
 func (p *Pair) Explode() bool {
 	if !p.CanExplode() {
-		hasExploded := false
-		if !p.LeftSide.IsValue() {
-			hasExploded = hasExploded || p.LeftSide.(*Pair).Explode()
+		if !p.LeftSide.IsValue() && p.LeftSide.(*Pair).Explode() {
+			return true
 		}
-		if !p.RightSide.IsValue() {
-			hasExploded = hasExploded || p.RightSide.(*Pair).Explode()
+		if !p.RightSide.IsValue() && p.RightSide.(*Pair).Explode() {
+			return true
 		}
-		return hasExploded
+		return false
 	}
 
 	walkUpLeft(p, int(p.LeftSide.(Value)))
@@ -127,27 +186,29 @@ func (p *Pair) Explode() bool {
 }
 
 func (p *Pair) Split() bool {
-	hasSplit := false
-
 	if p.LeftSide.IsValue() {
 		if p.LeftSide.Value() > 9 {
 			p.LeftSide = split(p.LeftSide.Value(), p)
-			hasSplit = true
+			return true
 		}
 	} else {
-		hasSplit = hasSplit || p.LeftSide.(*Pair).Split()
+		if p.LeftSide.(*Pair).Split() {
+			return true
+		}
 	}
 
 	if p.RightSide.IsValue() {
 		if p.RightSide.Value() > 9 {
 			p.RightSide = split(p.RightSide.Value(), p)
-			hasSplit = true
+			return true
 		}
 	} else {
-		hasSplit = hasSplit || p.RightSide.(*Pair).Split()
+		if p.RightSide.(*Pair).Split() {
+			return true
+		}
 	}
 
-	return hasSplit
+	return false
 }
 
 func (p *Pair) IsLeft(c *Pair) bool {
@@ -216,4 +277,5 @@ func (v Value) IsValue() bool      { return true }
 func (v Value) Value() int         { return int(v) }
 func (v Value) Left() ValueOrPair  { return nil }
 func (v Value) Right() ValueOrPair { return nil }
+func (v Value) Magnitude() int     { return int(v) }
 func (v Value) String() string     { return fmt.Sprintf("%d", v) }
