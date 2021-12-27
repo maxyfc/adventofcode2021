@@ -1,11 +1,9 @@
 package main
 
 import (
-	"adventofcode2021/pkg/strutil"
+	"adventofcode2021/day19/point"
 	_ "embed"
 	"fmt"
-	"log"
-	"strings"
 )
 
 //go:embed input.txt
@@ -17,190 +15,78 @@ func main() {
 }
 
 func part1(input string) int {
-	scanners := parseScanners(input)
-
-	var uniqueBeacons []Point
-	uniqueBeacons = append(uniqueBeacons, scanners[0]...)
-
-	scanners = append(scanners[:], scanners[1:]...)
-	for len(scanners) > 0 {
-		scanner := scanners[0]
-		scanners = append(scanners[:], scanners[1:]...)
-
-		found, _, over2, rotation2, _ := findOverlap(uniqueBeacons, scanner)
-		if found {
-			for _, p := range scanner {
-				if _, ok := over2[p]; !ok {
-					uniqueBeacons = append(uniqueBeacons, p.Rotate(rotation2))
-				}
-			}
-		} else {
-			scanners = append(scanners, scanner)
-		}
-
-		log.Printf("%d %v", len(uniqueBeacons), uniqueBeacons)
-	}
-
-	return len(uniqueBeacons)
+	points, _ := matchPoints(input)
+	return len(points)
 }
 
 func part2(input string) int {
-	return 0
-}
+	_, offsets := matchPoints(input)
 
-//go:generate go run gen/main.go -pkgName=main -typeName=Point -output=rotate.go
-
-type Point struct {
-	X, Y, Z int
-}
-
-func Parse(input string) Point {
-	s := strings.Split(input, ",")
-	if len(s) != 3 {
-		panic(fmt.Sprintf("Should 3 integers separated by comma. Got: %s", input))
-	}
-	v := strutil.MustAtoiSlice(s)
-	return Point{v[0], v[1], v[2]}
-}
-
-func (p1 Point) Substract(p2 Point) Vector {
-	return Vector{p1.X - p2.X, p1.Y - p2.Y, p1.Z - p2.Z}
-}
-
-func (p1 Point) Compare(p2 Point) int {
-	if p1.X < p2.X {
-		return -1
-	} else if p1.X > p2.X {
-		return 1
-	} else if p1.Y < p2.Y {
-		return -1
-	} else if p1.Y > p2.Y {
-		return 1
-	} else if p1.Z < p2.Z {
-		return -1
-	} else if p1.Z > p2.Z {
-		return 1
-	} else {
-		return 0
-	}
-}
-
-func (p Point) String() string {
-	return fmt.Sprintf("P(%d,%d,%d)", p.X, p.Y, p.Z)
-}
-
-type Vector struct {
-	X, Y, Z int
-}
-
-func (v Vector) String() string {
-	return fmt.Sprintf("V(%d,%d,%d)", v.X, v.Y, v.Z)
-}
-
-type Line struct {
-	P1, P2 Point
-}
-
-func calcDistances(ps []Point) map[Vector][]Line {
-	dist := make(map[Vector][]Line)
-	for i := 0; i < len(ps); i++ {
-		for j := i + 1; j < len(ps); j++ {
-			p1 := ps[i]
-			p2 := ps[j]
-			if p1.Compare(p2) > 0 {
-				p1, p2 = p2, p1
-			}
-			l := Line{p1, p2}
-			d := p2.Substract(p1)
-			dist[d] = append(dist[d], l)
-		}
-	}
-	return dist
-}
-
-func parseScanners(input string) [][]Point {
-	var result [][]Point
-	scanner := -1
-	for _, line := range strutil.SplitLines(input) {
-		if strings.HasPrefix(line, "--- scanner") {
-			result = append(result, make([]Point, 0))
-			scanner++
-			continue
-		} else if line == "" {
-			continue
-		}
-
-		if scanner >= 0 {
-			result[scanner] = append(result[scanner], Parse(line))
-		}
-	}
-	return result
-}
-
-func findOverlap(scan1 []Point, scan2 []Point) (
-	found bool,
-	over1 map[Point]struct{},
-	over2 map[Point]struct{},
-	rotation2 int,
-	offset2 Vector,
-) {
-	for rotID := 0; rotID < 24; rotID++ {
-		// rotate scanner 2 points
-		rotScan2 := make([]Point, 0, len(scan2))
-		for _, p := range scan2 {
-			rotScan2 = append(rotScan2, p.Rotate(rotID))
-		}
-
-		dist1 := calcDistances(scan1)
-		dist2 := calcDistances(rotScan2)
-
-		uniqueVec := make(map[Vector]int)
-		for d := range dist1 {
-			uniqueVec[d]++
-		}
-		for d := range dist2 {
-			uniqueVec[d]++
-		}
-
-		count := 0
-		var matchingVec []Vector
-		for d, c := range uniqueVec {
-			if c > 1 {
-				count++
-				matchingVec = append(matchingVec, d)
+	offsets = append(offsets, point.Vector{X: 0, Y: 0, Z: 0})
+	max := 0
+	for i := 0; i < len(offsets); i++ {
+		for j := i + 1; j < len(offsets); j++ {
+			curr := abs(offsets[i].X-offsets[j].X) +
+				abs(offsets[i].Y-offsets[j].Y) +
+				abs(offsets[i].Z-offsets[j].Z)
+			if max < curr {
+				max = curr
 			}
 		}
+	}
 
-		// 12 points should have 66 (12 * 11 / 2) matching lines with the same manhattan distance
-		if count >= 66 {
-			found = true
-			rotation2 = rotID
+	return max
+}
 
-			// Determine the 12 matching points
-			over1 = make(map[Point]struct{})
-			for _, d := range matchingVec {
-				for _, l := range dist1[d] {
-					over1[l.P1] = struct{}{}
-					over1[l.P2] = struct{}{}
+func abs(i int) int {
+	if i < 0 {
+		return -i
+	}
+	return i
+}
+
+func matchPoints(input string) (map[point.Point]struct{}, []point.Vector) {
+	scanners := point.ParseScanners(input)
+
+	todo := [][]point.Point{scanners[0]}
+	scanners = append(scanners[:0], scanners[1:]...)
+	done := [][]point.Point{}
+	offsets := []point.Vector{}
+	for len(todo) > 0 {
+		scan1 := todo[0]
+		todo = append(todo[:0], todo[1:]...)
+
+		toRemove := make(map[int]struct{})
+		for i := 0; i < len(scanners); i++ {
+			found, _, _, rotation2, offset2 := point.FindOverlap(scan1, scanners[i])
+			if found {
+				var scanTodo []point.Point
+				for _, p := range scanners[i] {
+					scanTodo = append(scanTodo, p.Rotate(rotation2).Offset(offset2))
 				}
+				todo = append(todo, scanTodo)
+				toRemove[i] = struct{}{}
+				offsets = append(offsets, offset2)
 			}
+		}
 
-			over2 = make(map[Point]struct{})
-			for _, d := range matchingVec {
-				for _, l := range dist2[d] {
-					over2[l.P1.Rotate(-rotID)] = struct{}{}
-					over2[l.P2.Rotate(-rotID)] = struct{}{}
-				}
+		scannersCopy := append(scanners[:0:0], scanners...)
+		scanners = scanners[0:0]
+		for i, s := range scannersCopy {
+			if _, exists := toRemove[i]; !exists {
+				scanners = append(scanners, s)
 			}
+		}
 
-			// Determine scanner 2 offset vector
-			p1 := dist1[matchingVec[0]][0].P1
-			p2 := dist2[matchingVec[0]][0].P1
-			offset2 = p1.Substract(p2)
+		done = append(done, scan1)
+	}
 
-			break
+	uniquePoints := make(map[point.Point]struct{})
+	for _, s := range done {
+		for _, p := range s {
+			uniquePoints[p] = struct{}{}
 		}
 	}
 
-	return
+	return uniquePoints, offsets
 }

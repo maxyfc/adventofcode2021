@@ -1,6 +1,6 @@
-// Generated on: Mon, 27 Dec 2021 11:55:29 AEDT
+// Generated on: Tue, 28 Dec 2021 10:40:05 AEDT
 
-package main
+package point
 
 import "fmt"
 

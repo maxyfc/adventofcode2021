@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	pkgName  *string = flag.String("pkgName", "main", "Name of the package of the Point type")
+	pkgName  *string = flag.String("pkgName", "point", "Name of the package of the Point type")
 	typeName *string = flag.String("typeName", "Point", "Name of the point type that have the X, Y, Z public fields")
 	output   *string = flag.String("output", "rotate.go", "Output file name")
 )
@@ -24,6 +24,9 @@ func main() {
 	flag.Parse()
 	writeFile()
 	formatFile()
+
+	cwd, _ := os.Getwd()
+	log.Printf("Generated: %s at %s", *output, cwd)
 }
 
 func writeFile() {
