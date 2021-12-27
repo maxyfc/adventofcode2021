@@ -44,38 +44,66 @@ func writeFile() {
 	fmt.Fprintf(out, "func (p %[1]s) Rotate(id int) %[1]s {\n", *typeName)
 	fmt.Fprintf(out, "switch id {\n")
 	for i, m := range rot {
-		fmt.Fprintf(out, "case %d:\n", i)
+		genCase(out, i, m)
 
-		mx := m[0:3]
-		my := m[3:6]
-		mz := m[6:9]
-		printMatrix(out, mx, my, mz)
-
-		fmt.Fprint(out, "return Point{")
-		for c, row := range [][]int{mx, my, mz} {
-			if c > 0 {
-				fmt.Fprint(out, ",")
-			}
-
-			s := ""
-			if row[0] == -1 {
-				s = "-p.X"
-			} else if row[0] == 1 {
-				s = "p.X"
-			} else if row[1] == -1 {
-				s = "-p.Y"
-			} else if row[1] == 1 {
-				s = "p.Y"
-			} else if row[2] == -1 {
-				s = "-p.Z"
-			} else if row[2] == 1 {
-				s = "p.Z"
-			}
-			fmt.Fprint(out, s)
+		if i > 0 {
+			// generate the inverse
+			inv := mat.NewDense(3, 3, convertToFloat64(m))
+			inv.Inverse(inv)
+			im := convertToInt(inv.RawMatrix().Data)
+			genCase(out, -i, im)
 		}
-		fmt.Fprintf(out, "}\n")
 	}
 	fmt.Fprintf(out, "default:\npanic(fmt.Sprintf(\"Invalid rotation ID: %%d\", id))\n}\n}\n")
+}
+
+func genCase(out io.Writer, i int, m [9]int) {
+	fmt.Fprintf(out, "case %d:\n", i)
+
+	mx := m[0:3]
+	my := m[3:6]
+	mz := m[6:9]
+	printMatrix(out, mx, my, mz)
+
+	fmt.Fprint(out, "return Point{")
+	for c, row := range [][]int{mx, my, mz} {
+		if c > 0 {
+			fmt.Fprint(out, ",")
+		}
+
+		s := ""
+		if row[0] == -1 {
+			s = "-p.X"
+		} else if row[0] == 1 {
+			s = "p.X"
+		} else if row[1] == -1 {
+			s = "-p.Y"
+		} else if row[1] == 1 {
+			s = "p.Y"
+		} else if row[2] == -1 {
+			s = "-p.Z"
+		} else if row[2] == 1 {
+			s = "p.Z"
+		}
+		fmt.Fprint(out, s)
+	}
+	fmt.Fprintf(out, "}\n")
+}
+
+func convertToFloat64(m [9]int) []float64 {
+	c := make([]float64, 0, 9)
+	for _, v := range m {
+		c = append(c, float64(v))
+	}
+	return c
+}
+
+func convertToInt(m []float64) [9]int {
+	var c [9]int
+	for i, v := range m {
+		c[i] = int(v)
+	}
+	return c
 }
 
 func formatFile() {
