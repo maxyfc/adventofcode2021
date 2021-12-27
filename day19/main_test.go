@@ -2,19 +2,153 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"testing"
 )
 
 func TestParts(t *testing.T) {
-	testData := ``
+	testData := `--- scanner 0 ---
+404,-588,-901
+528,-643,409
+-838,591,734
+390,-675,-793
+-537,-823,-458
+-485,-357,347
+-345,-311,381
+-661,-816,-575
+-876,649,763
+-618,-824,-621
+553,345,-567
+474,580,667
+-447,-329,318
+-584,868,-557
+544,-627,-890
+564,392,-477
+455,729,728
+-892,524,684
+-689,845,-530
+423,-701,434
+7,-33,-71
+630,319,-379
+443,580,662
+-789,900,-551
+459,-707,401
+
+--- scanner 1 ---
+686,422,578
+605,423,415
+515,917,-361
+-336,658,858
+95,138,22
+-476,619,847
+-340,-569,-846
+567,-361,727
+-460,603,-452
+669,-402,600
+729,430,532
+-500,-761,534
+-322,571,750
+-466,-666,-811
+-429,-592,574
+-355,545,-477
+703,-491,-529
+-328,-685,520
+413,935,-424
+-391,539,-444
+586,-435,557
+-364,-763,-893
+807,-499,-711
+755,-354,-619
+553,889,-390
+
+--- scanner 2 ---
+649,640,665
+682,-795,504
+-784,533,-524
+-644,584,-595
+-588,-843,648
+-30,6,44
+-674,560,763
+500,723,-460
+609,671,-379
+-555,-800,653
+-675,-892,-343
+697,-426,-610
+578,704,681
+493,664,-388
+-671,-858,530
+-667,343,800
+571,-461,-707
+-138,-166,112
+-889,563,-600
+646,-828,498
+640,759,510
+-630,509,768
+-681,-892,-333
+673,-379,-804
+-742,-814,-386
+577,-820,562
+
+--- scanner 3 ---
+-589,542,597
+605,-692,669
+-500,565,-823
+-660,373,557
+-458,-679,-417
+-488,449,543
+-626,468,-788
+338,-750,-386
+528,-832,-391
+562,-778,733
+-938,-730,414
+543,643,-506
+-524,371,-870
+407,773,750
+-104,29,83
+378,-903,-323
+-778,-728,485
+426,699,580
+-438,-605,-362
+-469,-447,-387
+509,732,623
+647,635,-688
+-868,-804,481
+614,-800,639
+595,780,-596
+
+--- scanner 4 ---
+727,592,562
+-293,-554,779
+441,611,-461
+-714,465,-776
+-743,427,-804
+-660,-479,-426
+832,-632,460
+927,-485,-438
+408,393,-506
+466,436,-512
+110,16,151
+-258,-428,682
+-393,719,612
+-211,-452,876
+808,-476,-593
+-575,615,604
+-485,667,467
+-680,325,-822
+-627,-443,-432
+872,-547,-609
+833,512,582
+807,604,487
+839,-516,451
+891,-625,532
+-652,-548,-490
+30,-46,-14`
 
 	tests := []struct {
 		partFunc func(string) int
 		expected int
 	}{
-		{part1, 0},
+		{part1, 79},
 		{part2, 0},
 	}
 
@@ -163,34 +297,14 @@ func TestSubstract(t *testing.T) {
 	}
 }
 
-func TestVectorDistance(t *testing.T) {
-	tests := []struct {
-		v        Vector
-		expected float64
-	}{
-		{Vector{0, 0, 0}, 0},
-		{Vector{1, 1, 1}, 1.732051},
-		{Vector{0, 3, 4}, 5},
-	}
-
-	for i, test := range tests {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			output := test.v.ManhattanDist().EuclidDistance()
-			if math.Abs(test.expected-output) > 0.000001 {
-				t.Errorf("Expected: %f Got: %f", test.expected, output)
-			}
-		})
-	}
-}
-
 func TestCalcDistances(t *testing.T) {
 	tests := []struct {
 		ps       []Point
-		expected map[ManhattanDist][]Line
+		expected map[Vector][]Line
 	}{
 		{
 			[]Point{{0, 0, 0}, {0, 1, 0}, {1, 0, 0}},
-			map[ManhattanDist][]Line{
+			map[Vector][]Line{
 				{0, 1, 0}: {
 					{
 						Point{0, 0, 0},
@@ -203,7 +317,7 @@ func TestCalcDistances(t *testing.T) {
 						Point{1, 0, 0},
 					},
 				},
-				{1, 1, 0}: {
+				{1, -1, 0}: {
 					{
 						Point{0, 1, 0},
 						Point{1, 0, 0},
@@ -370,17 +484,16 @@ func TestFindOverlappingPoints(t *testing.T) {
 				panic("Expected 2 scanners")
 			}
 
-			over1, over2, rotation2, offset2 := findOverlappingPoints(scanners[0], scanners[1])
+			found, over1, over2, rotation2, offset2 := findOverlap(scanners[0], scanners[1])
 
+			if !found {
+				t.Errorf("found: Expected: %v Got: %v", true, found)
+			}
 			if !reflect.DeepEqual(test.over1, over1) {
 				t.Errorf("over1: Expected: %v Got: %v", test.over1, over1)
-			} else {
-				t.Logf("over1: %v", over1)
 			}
 			if !reflect.DeepEqual(test.over2, over2) {
 				t.Errorf("over2: Expected: %v Got: %v", test.over2, over2)
-			} else {
-				t.Logf("over2: %v", over2)
 			}
 			if test.rotation2 != rotation2 {
 				t.Errorf("rotation2: Expected: %v Got: %v", test.rotation2, rotation2)
@@ -390,4 +503,49 @@ func TestFindOverlappingPoints(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPointCompare(t *testing.T) {
+	tests := []struct {
+		p1, p2   Point
+		expected int
+	}{
+		{Point{0, 0, 0}, Point{0, 0, 0}, 0},
+		{Point{0, 0, 0}, Point{0, 0, 1}, -1},
+		{Point{0, 0, 0}, Point{0, 1, 0}, -1},
+		{Point{0, 0, 0}, Point{1, 0, 0}, -1},
+		{Point{0, 0, 0}, Point{0, 1, 1}, -1},
+		{Point{0, 0, 0}, Point{1, 0, 1}, -1},
+		{Point{0, 0, 0}, Point{1, 1, 0}, -1},
+		{Point{0, 0, 0}, Point{1, 1, 1}, -1},
+		{Point{0, 0, 1}, Point{0, 0, 0}, 1},
+		{Point{0, 1, 0}, Point{0, 0, 0}, 1},
+		{Point{1, 0, 0}, Point{0, 0, 0}, 1},
+		{Point{0, 1, 1}, Point{0, 0, 0}, 1},
+		{Point{1, 0, 1}, Point{0, 0, 0}, 1},
+		{Point{1, 1, 0}, Point{0, 0, 0}, 1},
+		{Point{1, 1, 1}, Point{0, 0, 0}, 1},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			output := test.p1.Compare(test.p2)
+			if test.expected != output {
+				t.Errorf("Expected: %v Got: %v", test.expected, output)
+			}
+		})
+	}
+}
+
+func Test1(t *testing.T) {
+	p1 := Point{1, 1, 1}
+	p2 := Point{2, 2, 2}
+
+	if p2.Compare(p1) > 0 {
+		p1, p2 = p2, p1
+	}
+
+	t.Logf("p2 - p1 = %v", p2.Substract(p1))
+
+	t.Log("test")
 }
