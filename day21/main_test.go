@@ -11,7 +11,7 @@ func TestParts(t *testing.T) {
 		expected int
 	}{
 		{part1, 739785},
-		{part2, 0},
+		{part2, 444356092776315},
 	}
 
 	for i, test := range tests {
