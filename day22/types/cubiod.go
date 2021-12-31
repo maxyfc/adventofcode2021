@@ -1,6 +1,10 @@
 package types
 
-import "fmt"
+import (
+	"adventofcode2021/pkg/strutil"
+	"fmt"
+	"strings"
+)
 
 type Axis int
 
@@ -107,6 +111,52 @@ func (c *Cubiod) Copy() *Cubiod {
 	return &Cubiod{x: c.x, y: c.y, z: c.z}
 }
 
+func (c *Cubiod) Volume() int {
+	return c.x.Len() * c.y.Len() * c.z.Len()
+}
+
 func (c *Cubiod) String() string {
 	return fmt.Sprintf("(x=%s y=%s z=%s)", c.x, c.y, c.z)
+}
+
+func ParseLine(line string) (on bool, c *Cubiod) {
+	s := strings.Split(line, " ")
+	if len(s) != 2 {
+		panic(fmt.Sprintf("Expected to be in 2 parts separated by space. Got: %s", line))
+	}
+
+	switch s[0] {
+	case "on":
+		on = true
+	case "off":
+		on = false
+	default:
+		panic(fmt.Sprintf("Expected first part to be either on/off. Got: %s", s[0]))
+	}
+
+	ranges := strings.Split(s[1], ",")
+	if len(ranges) != 3 {
+		panic(fmt.Sprintf("Expected second part to be 3 subparts separated by comma. Got: %s", s[1]))
+	}
+
+	c = new(Cubiod)
+	for _, r := range ranges {
+		prefix := r[:2]
+		values := strings.Split(r[2:], "..")
+		if len(values) != 2 {
+			panic(fmt.Sprintf("Expected values to be 2 integers separated by '..'. Got: %s", values))
+		}
+		r := NewRange(strutil.MustAtoi(values[0]), strutil.MustAtoi(values[1]))
+		switch prefix {
+		case "x=":
+			c.x = r
+		case "y=":
+			c.y = r
+		case "z=":
+			c.z = r
+		default:
+			panic(fmt.Sprintf("Invalid prefix. Got: %s", prefix))
+		}
+	}
+	return
 }

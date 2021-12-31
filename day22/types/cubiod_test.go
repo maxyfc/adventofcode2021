@@ -215,3 +215,55 @@ func TestCubiodSplitByRange(t *testing.T) {
 		})
 	}
 }
+
+func TestCubiodVolume(t *testing.T) {
+	tests := []struct {
+		c        *Cubiod
+		expected int
+	}{
+		{NewCubiod(0, 0, 0, 0, 0, 0), 1},
+		{NewCubiod(0, 1, 0, 0, 0, 0), 2},
+		{NewCubiod(0, 1, 0, 1, 0, 0), 4},
+		{NewCubiod(0, 1, 0, 1, 0, 1), 8},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("Test%03d", i), func(t *testing.T) {
+			output := test.c.Volume()
+			if test.expected != output {
+				t.Errorf("Expected: %d Got: %d", test.expected, output)
+			}
+		})
+	}
+}
+
+func TestParseLine(t *testing.T) {
+	tests := []struct {
+		line string
+		on   bool
+		c    *Cubiod
+	}{
+		{
+			"on x=10..12,y=10..12,z=10..12",
+			true,
+			NewCubiod(10, 12, 10, 12, 10, 12),
+		},
+		{
+			"off x=9..11,y=9..11,z=9..11",
+			false,
+			NewCubiod(9, 11, 9, 11, 9, 11),
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("Test%03d", i), func(t *testing.T) {
+			on, c := ParseLine(test.line)
+			if test.on != on {
+				t.Errorf("Expected: %v Got: %v", test.on, on)
+			}
+			if !reflect.DeepEqual(test.c, c) {
+				t.Errorf("Expected: %s Got: %s", test.c, c)
+			}
+		})
+	}
+}

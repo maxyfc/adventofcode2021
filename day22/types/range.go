@@ -1,6 +1,9 @@
 package types
 
-import "fmt"
+import (
+	"adventofcode2021/pkg/intutil"
+	"fmt"
+)
 
 type Range struct {
 	v1, v2 int
@@ -27,17 +30,21 @@ func (r1 Range) Split(r2 Range) ([]Range, bool) {
 
 	var s []Range
 	if r1.v1 < r2.v1 {
-		s = append(s, NewRange(r1.v1, r2.v1-1), NewRange(r2.v1, min(r1.v2, r2.v2)))
+		s = append(s, NewRange(r1.v1, r2.v1-1), NewRange(r2.v1, intutil.Min(r1.v2, r2.v2)))
 		if r1.v2 > r2.v2 {
 			s = append(s, NewRange(r2.v2+1, r1.v2))
 		}
 	} else {
-		s = append(s, NewRange(r1.v1, min(r1.v2, r2.v2)))
+		s = append(s, NewRange(r1.v1, intutil.Min(r1.v2, r2.v2)))
 		if r1.v2 > r2.v2 {
 			s = append(s, NewRange(r2.v2+1, r1.v2))
 		}
 	}
 	return s, true
+}
+
+func (r Range) Len() int {
+	return r.v2 - r.v1 + 1
 }
 
 func (r Range) String() string {
