@@ -28,6 +28,10 @@ func part1(input string) int {
 
 	fmt.Println(w)
 
+	for _, m := range w.NextMoves() {
+		fmt.Printf("%#v\n", m)
+	}
+
 	return 0
 }
 
