@@ -6,18 +6,18 @@ import (
 )
 
 type World struct {
-	pods     []*Pod
 	hallways [numHallways]*Pod
 	rooms    [numRooms]*Room
 	roomSize int
 }
 
-func (w *World) EnergyUsed() int {
-	e := 0
-	for _, p := range w.pods {
-		e += p.energyUsed
+func (w *World) IsSolved() bool {
+	for _, r := range w.rooms {
+		if !r.IsSolved() {
+			return false
+		}
 	}
-	return e
+	return true
 }
 
 func (w *World) NextMoves() []*Move {
@@ -38,11 +38,11 @@ func (w *World) NextMoves() []*Move {
 
 				cost := (roomHallwaySteps[ri][hpos] + rpos) * podStepCosts[pod.t]
 				moves = append(moves, &Move{
-					T:          MoveTypeRoomToHallway,
-					RoomIndex:  ri,
-					RoomPos:    rpos,
-					HallwayPos: hpos,
-					Cost:       cost,
+					t:          MoveTypeRoomToHallway,
+					roomIndex:  ri,
+					roomPos:    rpos,
+					hallwayPos: hpos,
+					cost:       cost,
 				})
 			}
 		}
@@ -67,11 +67,11 @@ func (w *World) NextMoves() []*Move {
 		rpos := room.NextFreePos()
 		cost := (roomHallwaySteps[ri][hpos] + rpos) * podStepCosts[pod.t]
 		moves = append(moves, &Move{
-			T:          MoveTypeHallwayToRoom,
-			RoomIndex:  ri,
-			RoomPos:    rpos,
-			HallwayPos: hpos,
-			Cost:       cost,
+			t:          MoveTypeHallwayToRoom,
+			roomIndex:  ri,
+			roomPos:    rpos,
+			hallwayPos: hpos,
+			cost:       cost,
 		})
 	}
 
@@ -88,25 +88,54 @@ func (w *World) allEmpty(hallwayPos, room int) bool {
 }
 
 func (w *World) Apply(m *Move) {
-	room := w.rooms[m.RoomIndex]
-	if m.T == MoveTypeRoomToHallway {
+	room := w.rooms[m.roomIndex]
+	if m.t == MoveTypeRoomToHallway {
 		pod := room.RemovePod()
-		w.hallways[m.HallwayPos] = pod
-		pod.energyUsed += m.Cost
+		w.hallways[m.hallwayPos] = pod
 	} else {
-		pod := w.hallways[m.HallwayPos]
-		w.hallways[m.HallwayPos] = nil
+		pod := w.hallways[m.hallwayPos]
+		w.hallways[m.hallwayPos] = nil
 		room.AddPod(pod)
-		pod.energyUsed += m.Cost
 	}
 }
 
-// func (w *World) Copy() *World {
-// 	copy := &World{
-// 		pods: make([]*Pod, 0, len(w.pods)),
-// 	}
-// 	return copy
-// }
+func (w *World) Copy() *World {
+	copy := &World{
+		roomSize: w.roomSize,
+	}
+	for i, p := range w.hallways {
+		if p != nil {
+			copy.hallways[i] = p.Copy()
+		}
+	}
+	for ri, r := range w.rooms {
+		copy.rooms[ri] = r.Copy()
+	}
+	return copy
+}
+
+func (w *World) CacheKey() string {
+	var s strings.Builder
+	s.WriteString("h:")
+	for _, p := range w.hallways {
+		if p == nil {
+			s.WriteByte('-')
+		} else {
+			s.WriteString(p.t.String())
+		}
+	}
+	for ri, r := range w.rooms {
+		s.WriteString(fmt.Sprintf(",r%d:", ri))
+		for _, p := range r.pos {
+			if p == nil {
+				s.WriteByte('-')
+			} else {
+				s.WriteString(p.t.String())
+			}
+		}
+	}
+	return s.String()
+}
 
 func (w *World) String() string {
 	var s strings.Builder
@@ -136,7 +165,6 @@ func (w *World) String() string {
 	}
 
 	s.WriteString("\n  #########\n")
-	s.WriteString(fmt.Sprintf("Energy Used: %d\n", w.EnergyUsed()))
 
 	return s.String()
 }
@@ -212,9 +240,34 @@ func (r *Room) NextFreePos() int {
 	return -1
 }
 
+func (r *Room) Copy() *Room {
+	copy := &Room{
+		t:   r.t,
+		pos: make([]*Pod, len(r.pos)),
+	}
+	for i, p := range r.pos {
+		if p != nil {
+			copy.pos[i] = p.Copy()
+		}
+	}
+	return copy
+}
+
+func (r *Room) IsSolved() bool {
+	for _, p := range r.pos {
+		if p == nil || p.t != r.t {
+			return false
+		}
+	}
+	return true
+}
+
 type Pod struct {
-	t          PodType
-	energyUsed int
+	t PodType
+}
+
+func (p *Pod) Copy() *Pod {
+	return &Pod{t: p.t}
 }
 
 func (p *Pod) String() string {
@@ -249,11 +302,15 @@ func (t PodType) String() string {
 }
 
 type Move struct {
-	T          MoveType
-	RoomIndex  int
-	RoomPos    int
-	HallwayPos int
-	Cost       int
+	t          MoveType
+	roomIndex  int
+	roomPos    int
+	hallwayPos int
+	cost       int
+}
+
+func (m *Move) Cost() int {
+	return m.cost
 }
 
 const (
@@ -399,11 +456,9 @@ func NewWorld(roomSize int, podTypes ...PodType) *World {
 		panic(fmt.Sprintf("There should be a multiple of 4 pods. Got: %d", len(podTypes)))
 	}
 
-	pods := createPods(podTypes)
 	return &World{
-		pods:     pods,
 		roomSize: roomSize,
-		rooms:    createRooms(roomSize, pods),
+		rooms:    createRooms(roomSize, createPods(podTypes)),
 	}
 }
 
