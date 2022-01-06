@@ -5,7 +5,6 @@ import (
 	"container/heap"
 	_ "embed"
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -214,8 +213,6 @@ func (g *Grid) DebugPath(n *Node, showG bool) {
 			s.WriteString("\n")
 		}
 	}
-
-	log.Printf("%v\n%s", n.Path(), s.String())
 }
 
 type Node struct {
