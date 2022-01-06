@@ -2,6 +2,8 @@
 
 My solutions for [Advent of Code 2021](https://adventofcode.com/2021).
 
+To run all:
+
 ```
 go run main.go
 ```
