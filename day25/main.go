@@ -29,10 +29,6 @@ func part1(input string) int {
 	return steps
 }
 
-func part2(input string) int {
-	return 0
-}
-
 type grid struct {
 	data   []byte
 	width  int
